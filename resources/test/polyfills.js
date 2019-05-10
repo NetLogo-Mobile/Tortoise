@@ -8,7 +8,7 @@ if (typeof Polyglot !== "undefined") {
   const ByteArr  = Java.type("byte[]");
   const Color    = Java.type('java.awt.Color');
   const Compiler = Java.type('org.nlogo.tortoise.compiler.Compiler');
-  const Files    = Java.type('java.nio.file.Files');
+  const Files    = Java.type('org.nlogo.tortoise.compiler.Files');
   const ImageIO  = Java.type('javax.imageio.ImageIO');
   const Paths    = Java.type('java.nio.file.Paths');
   const Scanner  = Java.type('java.util.Scanner');
@@ -109,8 +109,7 @@ if (typeof Polyglot !== "undefined") {
     function(filename) {
       const out  = [];
       const path = Paths.get(filename);
-      Files.readAllLines(path).forEach(function(line) { out.push(line); });
-      return out.join("\n");
+      return Files.readToSingleString(path);
     };
 
   const slurpTextFromURL =
