@@ -225,7 +225,7 @@ module.exports = {
         "GET-SCALE": getScale,
         "SET-SCALE": setScale,
         "XCOR": xcor,
-        "YCOR": y,
+        "YCOR": ycor,
         "SHOW-WIREFRAMES": showWireframes,
         "HIDE-WIREFRAMES": hideWireframes,
         "SHOW-WIREFRAME": showWireframe,
