@@ -12,7 +12,7 @@ ColorSchemes = require('./palette-color-schemes')
 #RGBList
 validateRGB = (color) ->
   if (not isValidRGBList(color))
-    throw exceptions.extension("Color must have a valid RGB List.")
+    throw exceptions.extension("An rgb list must contain 3 or 4 numbers 0-255")
   return
 
 isValidRGBList = (color) ->
@@ -41,7 +41,7 @@ rgbUpdated = (color, value, index) ->
 #HSB
 validateHSB = (color) ->
   if (not isValidHSBList(color))
-    throw exceptions.extension("Color must be a valid HSB list.")
+    throw exceptions.extension("An HSB list must contain 3 numbers, the first between 0-360, the rest 0-100")
   return
 
 isValidHSBList = (color) -> # must be a list upon import

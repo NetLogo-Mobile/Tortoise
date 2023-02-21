@@ -1,6 +1,8 @@
 # (C) Uri Wilensky. https://github.com/NetLogo/Tortoise
 GlobalStateExtensionPorter = require('../engine/core/world/globalstateextensionporter')
 
+Color = require('../engine/core/colormodel')
+
 getXR = () =>
   if window?.TortugaXR?
     return window.TortugaXR.Instance
@@ -9,6 +11,31 @@ getXR = () =>
 
 extensionName = "xr"
 
+# RGB support - copied from Palette
+# We will need to refactor those checks at one point. JC 2/14/23
+validateRGB = (color) ->
+  if (not isValidRGBList(color))
+    throw exceptions.extension("An rgb list must contain 3 or 4 numbers 0-255")
+  return
+
+isValidRGBList = (color) ->
+  valid = (true)
+
+  color = toColorList(color)
+  if (color.length < 3 or color.length > 4)
+    return false
+  valid = color.every((component) ->
+    typeof component is "number" and component >= 0 and component <= 255)
+  valid
+
+toColorList = (color) ->
+  if (typeof color is "number")
+    color = Color.colorToRGB(color)
+    if (color.length is 4) # sometimes gives an alpha of 0
+      color.pop()
+  return color
+
+# Import and Export
 exportGlobal = () ->
     if XR = getXR()
         XR.ExportState()
@@ -99,6 +126,16 @@ module.exports = {
       else
         0
 
+    # (Color) => Unit
+    colorizeWireframes = (color) ->
+      validateRGB(color)
+      list = toColorList(color)
+      if XR = getXR()
+        XR.ColorizeWireframes(list)
+      else
+        workspace.printPrims.print("Try to ask the XR view to colorize all room wireframes with #{color}.")
+      return
+
     # () => Unit
     showWireframes = () ->
       if XR = getXR()
@@ -113,6 +150,16 @@ module.exports = {
         XR.HideWireframes()
       else
         workspace.printPrims.print("Try to ask the XR view to hide all room wireframes.")
+      return
+
+    # (String, Color) => Unit
+    colorizeWireframe = (id, color) ->
+      validateRGB(color)
+      list = toColorList(color)
+      if XR = getXR()
+        XR.ColorizeWireframe(id, list)
+      else
+        workspace.printPrims.print("Try to ask the XR view to colorize the room wireframe #{id} with #{color}.")
       return
 
     # (String) => Unit
@@ -226,8 +273,10 @@ module.exports = {
         "SET-SCALE": setScale,
         "XCOR": xcor,
         "YCOR": ycor,
+        "COLORIZE-WIREFRAMES": colorizeWireframes,
         "SHOW-WIREFRAMES": showWireframes,
         "HIDE-WIREFRAMES": hideWireframes,
+        "COLORIZE-WIREFRAME": colorizeWireframe,
         "SHOW-WIREFRAME": showWireframe,
         "HIDE-WIREFRAME": hideWireframe,
         "ROOM-SCAN": roomScan,
