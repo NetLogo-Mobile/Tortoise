@@ -126,6 +126,27 @@ module.exports = {
       else
         0
 
+    # () -> Number
+    dx = () ->
+      if XR = getXR()
+        XR.GetDx()
+      else
+        0
+
+    # () -> Number
+    dy = () ->
+      if XR = getXR()
+        XR.GetDy()
+      else
+        0
+        
+    # () -> Number
+    heading = () ->
+      if XR = getXR()
+        XR.GetHeading()
+      else
+        0
+
     # (Color) => Unit
     colorizeWireframes = (color) ->
       validateRGB(color)
@@ -273,6 +294,9 @@ module.exports = {
         "SET-SCALE": setScale,
         "XCOR": xcor,
         "YCOR": ycor,
+        "DX": dx,
+        "DY": dy,
+        "HEADING": heading,
         "COLORIZE-WIREFRAMES": colorizeWireframes,
         "SHOW-WIREFRAMES": showWireframes,
         "HIDE-WIREFRAMES": hideWireframes,
