@@ -43,6 +43,20 @@ module.exports = {
         workspace.printPrims.print("Hide UI component #{name}")
       return
 
+    # () => String
+    id = () ->
+      if window?.TortugaSession?
+        window.TortugaSession.ID
+      else
+        ""
+
+    # () => Number
+    getSpeed = () ->
+      if window?.TortugaSession?
+        window.TortugaSession.Speed
+      else
+        1
+
     # (Number) => Unit
     setSpeed = (speed) ->
       if tortugaSession = getTortugaSession()
@@ -137,7 +151,9 @@ module.exports = {
       ,        "PAUSE": pause
       ,         "SHOW": show
       ,         "HIDE": hide
+      ,           "ID": id
       ,    "SET-SPEED": setSpeed
+      ,    "GET-SPEED": getSpeed
       , "GET-PLATFORM": getPlatform
     ,"EXECUTE-COMMAND": executeCommand
      ,"CLEAR-COMMANDS": clearCommands
