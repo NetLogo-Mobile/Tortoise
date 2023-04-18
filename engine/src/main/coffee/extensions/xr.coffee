@@ -127,6 +127,13 @@ module.exports = {
         0
 
     # () -> Number
+    zcor = () ->
+      if XR = getXR()
+        XR.GetZcor()
+      else
+        0
+
+    # () -> Number
     dx = () ->
       if XR = getXR()
         XR.GetDx()
@@ -294,6 +301,7 @@ module.exports = {
         "SET-SCALE": setScale,
         "XCOR": xcor,
         "YCOR": ycor,
+        "ZCOR": zcor,
         "DX": dx,
         "DY": dy,
         "HEADING": heading,

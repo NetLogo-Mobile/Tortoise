@@ -78,20 +78,34 @@ module.exports = {
         workspace.printPrims.print("Rest for #{beats}.")
       return
     
-    # (Number) => Unit
+    # (Callback) => Unit
     playLoop = (callback) ->
       if MIDI = getMIDI()
         MIDI.Play(true, callback)
       else
         workspace.printPrims.print("Play the series indefinitely.")
     
-    # (Number) => Unit
+    # (Callback) => Unit
     playOnce = (callback) ->
       if MIDI = getMIDI()
         MIDI.Play(false, callback)
       else
         workspace.printPrims.print("Play the series only once.")
     
+    # (Number, Number) => Unit
+    playAt = (x, y) ->
+      if MIDI = getMIDI()
+        MIDI.PlayAt(x, y)
+      else
+        workspace.printPrims.print("Play the series at (#{x}, #{y}).")
+    
+    # () => Unit
+    playHere = () ->
+      if MIDI = getMIDI()
+        MIDI.PlayHere(SelfManager.self())
+      else
+        workspace.printPrims.print("Play the series at (#{SelfManager.self().toString()}).")
+
     # () => Number
     who = () ->
       # Check availability
@@ -172,6 +186,8 @@ module.exports = {
         "ONCE": playOnce,
         "LOOP-THEN": playLoop,
         "ONCE-THEN": playOnce,
+        "PLAY-AT": playAt,
+        "PLAY-HERE": playHere,
         "WHO": who,
         "VOLUME": volume,
         "MOVETO": moveTo,
