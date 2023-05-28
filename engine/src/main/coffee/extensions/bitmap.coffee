@@ -53,9 +53,14 @@ channel = (image, channel) ->
 # (World) => (ImageData, Int, Int) => Unit
 copyToDrawing = (image, x, y) ->
   checkIsImage(image)
-  # I don't love converting this back to base64 to import it, but this is the simplest way I see at the moment without
-  # adding a whole new drawing event (of uncertain data type) here and in desktop.  -Jeremy B November 2022
-  modelConfig.importImage(toBase64(image), Math.floor(x), Math.floor(y))
+  # For the sake of performance, I added the `import-image` drawing event, which is a more direct way to do this. -John Chen May 2023
+  workspace.updater.importImage(image, x, y)
+  return
+
+# (World) => (ImageData, String) => Unit
+copyToShape = (image, name, rotatable = false) ->
+  checkIsImage(image)
+  workspace.updater.importImage(image, 0, 0, name, rotatable)
   return
 
 # (World) => (ImageData, Boolean) => Unit
@@ -116,11 +121,14 @@ toGrayscale = (image) ->
   newData = new Uint8ClampedArray(image.data.length)
 
   for index in [0...image.data.length] by 4
-    value = Math.floor(image.data[index] / 3) + Math.floor(image.data[index + 1] / 3) + Math.floor(image.data[index + 2] / 3)
+    # https://en.wikipedia.org/wiki/Grayscale
+    # Also preserved the alpha channel
+    # Changed the formula based on the SRGB color space (the most common one used in screens) -John Chen May 2023
+    value = Math.floor(image.data[index] * 0.2126 + image.data[index + 1] * 0.7152 + image.data[index + 2] * 0.0722)
     newData[index    ] = value
     newData[index + 1] = value
     newData[index + 2] = value
-    newData[index + 3] = 255
+    newData[index + 3] = image.data[index + 3]
 
   new ImageData(newData, image.width, image.height)
 
@@ -148,34 +156,51 @@ boxScale = (image, width, height) ->
       boxXEnd = Math.min(boxXStart + boxWidth,  image.width  - 1)
       boxYEnd = Math.min(boxYStart + boxHeight, image.height - 1)
 
-      rgbSums = [0, 0, 0]
+      # There is no reason not to scale the alpha channel as well. -John Chen May 2023
+      rgbaSums = [0, 0, 0, 0]
       for boxX in [boxXStart..boxXEnd]
         for boxY in [boxYStart..boxYEnd]
           boxIndex = 4 * ((boxY * image.width) + boxX)
-          rgbSums[0] += image.data[boxIndex    ]
-          rgbSums[1] += image.data[boxIndex + 1]
-          rgbSums[2] += image.data[boxIndex + 2]
+          rgbaSums[0] += image.data[boxIndex    ]
+          rgbaSums[1] += image.data[boxIndex + 1]
+          rgbaSums[2] += image.data[boxIndex + 2]
+          rgbaSums[3] += image.data[boxIndex + 3]
 
       boxPixelCount = (boxXEnd - boxXStart) * (boxYEnd - boxYStart)
 
-      newData[newIndex    ] = Math.floor(rgbSums[0] / boxPixelCount)
-      newData[newIndex + 1] = Math.floor(rgbSums[1] / boxPixelCount)
-      newData[newIndex + 2] = Math.floor(rgbSums[2] / boxPixelCount)
-      newData[newIndex + 3] = 255
+      newData[newIndex    ] = Math.floor(rgbaSums[0] / boxPixelCount)
+      newData[newIndex + 1] = Math.floor(rgbaSums[1] / boxPixelCount)
+      newData[newIndex + 2] = Math.floor(rgbaSums[2] / boxPixelCount)
+      newData[newIndex + 3] = Math.floor(rgbaSums[3] / boxPixelCount)
 
   new ImageData(newData, width, height)
 
-# (Array[Int], Int, Int, Int) => Array[RGB]
+# (Array[Int], Int, Int, Int) => Array[RGBA]
 getPixel = (data, width, x, y) ->
   index = 4 * ((y * width) + x)
-  [0..2].map( (i) -> data[index + i] )
+  [0..3].map( (i) -> data[index + i] )
 
-# (Array[Int], Int, Int, Int, Array[RGB]) => Unit
-setPixel = (data, width, x, y, rgb) ->
+# (Array[Int], Int, Int) => Array[RGBA]
+getPixelAPI = (image, x, y) ->
+  checkIsImage(image)
+  getPixel(image, image.width, x, y)
+
+# (Array[Int], Int, Int, Int, Array[RGBA]) => Unit
+setPixel = (data, width, x, y, rgba) ->
   index = 4 * ((y * width) + x)
-  for i in [0..2]
+  for i in [0..3]
     data[index + i] = rgb[i]
   data[index + 3] = 255
+  return
+  
+# (Array[Int], Int, Int, Int, Array[RGBA]) => Unit
+setPixelAPI = (data, x, y, rgba) ->
+  checkIsImage(image)
+  if !Array.isArray(rgba) or rgba.length < 3 or rgba.length > 4
+    throw exceptions.extension("The input color must be an array of length 3.")
+  if rgba.length == 3
+    rgba.push(255)
+  setPixel(image, image.width, x, y, rgba)
   return
 
 arrMult = (arr, scalar) ->
@@ -263,6 +288,7 @@ bitmapExtension = {
         "AVERAGE-COLOR": averageColor
       , "CHANNEL": channel
       , "COPY-TO-DRAWING": copyToDrawing
+      , "COPY-TO-SHAPE": copyToShape
       , "COPY-TO-PCOLORS": copyToPColors(workspace.world)
       , "DIFFERENCE-RGB": differenceRgb
       , "EXPORT": exportError
@@ -270,10 +296,12 @@ bitmapExtension = {
       , "TO-BASE64": toBase64
       , "FROM-VIEW": fromView
       , "TO-GRAYSCALE": toGrayscale
-      , "HEIGHT": height
       , "IMPORT": importError
       , "SCALED": scaled
+      , "HEIGHT": height
       , "WIDTH": width
+      , "GET-PIXEL": getPixelAPI
+      , "SET-PIXEL": setPixelAPI
       }
     }
 }
