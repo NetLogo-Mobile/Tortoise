@@ -2,6 +2,16 @@
 
 EN_US = require('./en_us')
 
+# Manually importing these is kind-of a pain, but it's easy enough to keep updated and I don't feel like wrestling with
+# getting the dyanmic `require()` working with Tortoise's packaging.  *TODO*: Once we've switched over to ES modules
+# would be a good time to revisit this.  -Jeremy B March 2023
+ZH_CN = require('./zh_cn')
+
+BUNDLES = {
+  'en_us': EN_US
+, 'zh_cn': ZH_CN
+}
+
 { exceptionFactory: exceptions } = require('util/exception')
 
 # At the moment this doesn't do much but it'd be a good place to add
@@ -11,6 +21,7 @@ EN_US = require('./en_us')
 class I18nBundle
 
   _current = null
+  _warnings = new Set()
 
   constructor: () ->
     @_current = EN_US
@@ -25,11 +36,19 @@ class I18nBundle
 
     message = bundle[key]
     message(args...)
-  
+
+  supports: (locale) ->
+    BUNDLES.hasOwnProperty(locale)
+
   switch: (locale) ->
-    try
-      @_current = require('i18n/' + locale)
-    catch
+    if @supports(locale)
+      @_current = BUNDLES[locale]
+
+    else
+      if not @_warnings.has(locale)
+        @_warning.add(locale)
+        console.warn("Unsupported locale '#{locale}', reverting to 'en_us'.")
+
       @_current = EN_US
 
 module.exports = I18nBundle

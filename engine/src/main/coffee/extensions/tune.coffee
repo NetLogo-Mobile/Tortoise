@@ -14,7 +14,7 @@ module.exports = {
     allInstruments = ["ACOUSTIC GRAND PIANO", "BRIGHT ACOUSTIC PIANO", "ELECTRIC GRAND PIANO", "HONKY-TONK PIANO", "ELECTRIC PIANO 1", "ELECTRIC PIANO 2", "HARPSICHORD", "CLAVI", "CELESTA", "GLOCKENSPIEL", "MUSIC BOX", "VIBRAPHONE", "MARIMBA", "XYLOPHONE", "TUBULAR BELLS", "DULCIMER", "DRAWBAR ORGAN", "PERCUSSIVE ORGAN", "ROCK ORGAN", "CHURCH ORGAN", "REED ORGAN", "ACCORDION", "HARMONICA", "TANGO ACCORDION", "NYLON STRING GUITAR", "STEEL ACOUSTIC GUITAR", "JAZZ ELECTRIC GUITAR", "CLEAN ELECTRIC GUITAR", "MUTED ELECTRIC GUITAR", "OVERDRIVEN GUITAR", "DISTORTION GUITAR", "GUITAR HARMONICS", "ACOUSTIC BASS", "FINGERED ELECTRIC BASS", "PICKED ELECTRIC BASS", "FRETLESS BASS", "SLAP BASS 1", "SLAP BASS 2", "SYNTH BASS 1", "SYNTH BASS 2", "VIOLIN", "VIOLA", "CELLO", "CONTRABASS", "TREMOLO STRINGS", "PIZZICATO STRINGS", "ORCHESTRAL HARP", "TIMPANI", "STRING ENSEMBLE 1", "STRING ENSEMBLE 2", "SYNTH STRINGS 1", "SYNTH STRINGS 2", "CHOIR AAHS", "VOICE OOHS", "SYNTH VOICE", "ORCHESTRA HIT", "TRUMPET", "TROMBONE", "TUBA", "MUTED TRUMPET", "FRENCH HORN", "BRASS SECTION", "SYNTH BRASS 1", "SYNTH BRASS 2", "SOPRANO SAX", "ALTO SAX", "TENOR SAX", "BARITONE SAX", "OBOE", "ENGLISH HORN", "BASSOON", "CLARINET", "PICCOLO", "FLUTE", "RECORDER", "PAN FLUTE", "BLOWN BOTTLE", "SHAKUHACHI", "WHISTLE", "OCARINA", "SQUARE WAVE", "SAWTOOTH WAVE", "CALLIOPE", "CHIFF", "CHARANG", "VOICE", "FIFTHS", "BASS AND LEAD", "NEW AGE", "WARM", "POLYSYNTH", "CHOIR", "BOWED", "METAL", "HALO", "SWEEP", "RAIN", "SOUNDTRACK", "CRYSTAL", "ATMOSPHERE", "BRIGHTNESS", "GOBLINS", "ECHOES", "SCI-FI", "SITAR", "BANJO", "SHAMISEN", "KOTO", "KALIMBA", "BAG PIPE", "FIDDLE", "SHANAI", "TINKLE BELL", "AGOGO", "STEEL DRUMS", "WOODBLOCK", "TAIKO DRUM", "MELODIC TOM", "SYNTH DRUM", "REVERSE CYMBAL", "GUITAR FRET NOISE", "BREATH NOISE", "SEASHORE", "BIRD TWEET", "TELEPHONE RING", "HELICOPTER", "APPLAUSE", "GUNSHOT"]
     
     # () => Unit
-    clearAll = () -> clear()
+    clearAll = () -> MIDI.Reset()
 
     # () => List
     drums = () -> allDrums
@@ -62,7 +62,7 @@ module.exports = {
         throw new Error("Velocity #{velocity} is too large or too small.")
       else if MIDI = getMIDI()
         duration = beatsToMilliseconds(beats)
-        MIDI.PlayNote(MIDI.Instrument, note, velocity * MIDI.Volume, duration, MIDI.Position)
+        MIDI.PlayNote(MIDI.Instrument, note, velocity * MIDI.Volume, duration, MIDI.Position, MIDI.Spatial)
         MIDI.ChangePosition(duration)
       else
         workspace.printPrims.print("Play note #{note} with #{beats} beats and #{velocity} velocity.")
@@ -92,12 +92,12 @@ module.exports = {
       else
         workspace.printPrims.print("Play the series only once.")
     
-    # (Number, Number) => Unit
-    playAt = (x, y) ->
+    # (Number, Number, Number) => Unit
+    playAt = (x, y, z) ->
       if MIDI = getMIDI()
-        MIDI.PlayAt(x, y)
+        MIDI.PlayAt(x, y, z ? 0)
       else
-        workspace.printPrims.print("Play the series at (#{x}, #{y}).")
+        workspace.printPrims.print("Play the series at (#{x}, #{y}, #{z ? 0}).")
     
     # () => Unit
     playHere = () ->

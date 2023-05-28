@@ -1,7 +1,7 @@
 # (C) Uri Wilensky. https://github.com/NetLogo/Tortoise
 
 extensionPaths = [
-  'array', 'bitmap', 'codap', 'csv', 'encode', 'dialog', 'export-the', 'fetch', 'fp', 'http-req', 'import-a', 'logging', 'matrix', 'mini-csv', 'nlmap', 'nt', 'palette', 'send-to', 'sound', 'store', 'table',
+  'array', 'bitmap', 'csv', 'encode', 'dialog', 'export-the', 'fp', 'http-req', 'import-a', 'logging', 'matrix', 'mini-csv', 'nlmap', 'nt', 'palette', 'send-to', 'sound', 'store', 'string', 'table',
   # Followings are Turtle Universe extensions
   'plot', 'tutorial', 'widget', 'workspace', 'nettango', 'sensor', 'tune', 'phys', 'xr'
 ]
