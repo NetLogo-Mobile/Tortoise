@@ -171,7 +171,7 @@ boxScale = (image, width, height) ->
           rgbaSums[2] += image.data[boxIndex + 2]
           rgbaSums[3] += image.data[boxIndex + 3]
 
-      boxPixelCount = (boxXEnd - boxXStart) * (boxYEnd - boxYStart)
+      boxPixelCount = (boxXEnd - boxXStart + 1) * (boxYEnd - boxYStart + 1)
 
       newData[newIndex    ] = Math.floor(rgbaSums[0] / boxPixelCount)
       newData[newIndex + 1] = Math.floor(rgbaSums[1] / boxPixelCount)
