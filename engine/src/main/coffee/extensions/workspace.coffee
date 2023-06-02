@@ -84,7 +84,7 @@ module.exports = {
     trigger = (name, data) ->
       if tortugaSession = getTortugaSession()
         if Array.isArray(data) or data instanceof Map
-          event = tortugaSession.EventRegistry.BuildEvent(11, null, name, data)
+          event = tortugaSession.EventRegistry.BuildEvent(12, null, name, data)
           tortugaSession.EventRegistry.HandleEvent(event)
         else
           throw new Error("Data has to be a list of key-value pairs, or a map")
