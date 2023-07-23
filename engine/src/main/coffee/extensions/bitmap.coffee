@@ -194,7 +194,7 @@ getPixelAPI = (image, x, y) ->
 setPixel = (data, width, x, y, rgba) ->
   index = 4 * ((y * width) + x)
   for i in [0..3]
-    data[index + i] = rgb[i]
+    data[index + i] = rgba[i]
   data[index + 3] = 255
   return
   

@@ -79,23 +79,22 @@ module.exports =
     _singularBreeds: undefined # Object[Breed]
 
     # (Array[BreedObj], Array[String], Array[String]) => BreedManager
-    constructor: (breedObjs, turtlesOwns = [], linksOwns = []) ->
+    constructor: (breedObjs, @_turtlesOwns = [], @_linksOwns = []) ->
 
-      defaultBreeds = {
-        TURTLES: new Breed("turtles", "turtle", this, turtlesOwns, [], undefined, "default"),
-        LINKS:   new Breed("links",   "link",   this, linksOwns,   [],   false,     "default")
-      }
+      @_breeds = new Object(null)
+      @_breeds.TURTLES = new Breed("turtles", "turtle", this, @_turtlesOwns, [], undefined, "default");
+      @_breeds.LINKS = new Breed("links",   "link",   this, @_linksOwns,   [],   false,     "default");
 
-      @_breeds = foldl(
-        (acc, breedObj) =>
-          trueVarNames    = breedObj.varNames ? []
-          defaultNames    = if breedObj.isDirected? then linksOwns else turtlesOwns
-          breed           = new Breed(breedObj.name, breedObj.singular, this, trueVarNames, defaultNames, breedObj.isDirected)
-          acc[breed.name] = breed
-          acc
-      )(defaultBreeds)(breedObjs)
+      breedObjs.forEach((obj) => @create(obj))
 
       @_singularBreeds = pipeline(values, map((b) -> [b.singular, b]), toObject)(@_breeds)
+
+    create: (breedObj) ->
+      trueVarNames    = breedObj.varNames ? []
+      defaultNames    = if breedObj.isDirected? then @_linksOwns else @_turtlesOwns
+      breed           = new Breed(breedObj.name, breedObj.singular, this, trueVarNames, defaultNames, breedObj.isDirected)
+      @_breeds[breed.name] = breed
+      breed
 
     # () => Object[Breed]
     breeds: ->
