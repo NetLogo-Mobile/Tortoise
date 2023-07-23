@@ -94,6 +94,9 @@ module.exports =
       defaultNames    = if breedObj.isDirected? then @_linksOwns else @_turtlesOwns
       breed           = new Breed(breedObj.name, breedObj.singular, this, trueVarNames, defaultNames, breedObj.isDirected)
       @_breeds[breed.name] = breed
+      @_orderedBreeds = undefined
+      @_orderedLinkBreeds = undefined
+      @_orderedTurtleBreeds = undefined
       breed
 
     # () => Object[Breed]
