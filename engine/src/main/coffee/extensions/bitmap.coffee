@@ -259,7 +259,9 @@ bilinearScale = (image, width, height) ->
 # (ImageData, Int, Int) => ImageData
 scaled = (image, width, height) ->
   checkIsImage(image)
-  if image.width > width and image.height > height
+  if image.width = width and image.height = image.height
+    image
+  else if image.width > width and image.height > height
     boxScale(image, width, height)
   else
     bilinearScale(image, width, height)
