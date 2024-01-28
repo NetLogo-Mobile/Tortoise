@@ -60,9 +60,9 @@ copyToDrawing = (image, x, y) ->
 # (World) => (ImageData, String) => Unit
 copyToShape = (image, name, rotatable = false) ->
   checkIsImage(image)
-  if (image.width > 512 and image.height > 512)
+  if (image.width >= 512 and image.height >= 512)
     image = scaled(image, 512, 512)
-  else if (image.width > 256 and image.height > 256)
+  else if (image.width >= 256 and image.height >= 256)
     image = scaled(image, 256, 256)
   else image = scaled(image, 128, 128)
   workspace.updater.importImage(image, 0, 0, name, rotatable)
@@ -195,7 +195,6 @@ setPixel = (data, width, x, y, rgba) ->
   index = 4 * ((y * width) + x)
   for i in [0..3]
     data[index + i] = rgba[i]
-  data[index + 3] = 255
   return
   
 # (Array[Int], Int, Int, Int, Array[RGBA]) => Unit
