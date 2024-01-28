@@ -2,11 +2,11 @@
 
 { DisplayMode: { displayModeFromNum } } = require('./pen')
 
-{ filter, forEach, map, toObject, zip }               = require('brazierjs/array')
-{ flip, pipeline }                                    = require('brazierjs/function')
-{ flatMap: flatMapMaybe, fold, map: mapMaybe, maybe } = require('brazierjs/maybe')
-{ values }                                            = require('brazierjs/object')
-{ isNumber }                                          = require('brazierjs/type')
+{ filter, forEach, map, toObject, zip }                     = require('brazierjs/array')
+{ flip, pipeline }                                          = require('brazierjs/function')
+{ flatMap: flatMapMaybe, fold, map: mapMaybe, maybe, None } = require('brazierjs/maybe')
+{ values }                                                  = require('brazierjs/object')
+{ isNumber }                                                = require('brazierjs/type')
 
 { exceptionFactory: exceptions } = require('util/exception')
 
@@ -20,6 +20,13 @@ module.exports = class PlotManager
     toName             = (p) -> p.name.toUpperCase()
     @_currentPlotMaybe = maybe(plots[plots.length - 1])
     @_plotMap          = pipeline(map(toName), flip(zip)(plots), toObject)(plots)
+
+  # (Plot) => Unit
+  addPlot: (plot) ->
+    name = plot.name.toUpperCase()
+    if not @_plotMap[name]?
+      @_plotMap[name] = plot
+    return
 
   # () => Unit
   clearAllPlots: ->
@@ -89,8 +96,8 @@ module.exports = class PlotManager
 
   # (ExportedPlotManager) => Unit
   importState: ({ currentPlotNameOrNull, plots }) ->
-    plots.forEach((plot) => @_plotMap[plot.name.toUpperCase()]?.importState(plot))
-    @_currentPlotMaybe = flatMapMaybe((name) => maybe(@_plotMap[name.toUpperCase()]))(maybe(currentPlotNameOrNull))
+    plots.forEach((plot) => @_lookupPlot(plot.name)?.importState(plot))
+    @_currentPlotMaybe = flatMapMaybe((name) => maybe(@_lookupPlot(name)))(maybe(currentPlotNameOrNull))
     return
 
   # () => Boolean
@@ -116,6 +123,16 @@ module.exports = class PlotManager
     @_withPlot((plot) -> plot.raisePen())
     return
 
+  # (String) => Unit
+  removePlot: (name) ->
+    upperName = name.toUpperCase()
+    target    = @_lookupPlot(upperName)
+    if target?
+      f = (p) -> if p is target then @_currentPlotMaybe = None
+      fold(->)(f)(@_currentPlotMaybe)
+      delete @_plotMap[upperName]
+    return
+
   # () => Unit
   resetPen: ->
     @_withPlot((plot) -> plot.resetPen())
@@ -128,7 +145,7 @@ module.exports = class PlotManager
 
   # (String) => Unit
   setCurrentPlot: (name) ->
-    plot = @_plotMap[name.toUpperCase()]
+    plot = @_lookupPlot(name)
     if plot?
       @_currentPlotMaybe = maybe(plot)
     else
@@ -181,7 +198,7 @@ module.exports = class PlotManager
   # [T] @ (String, String) => (() => T) => T
   withTemporaryContext: (plotName, penName) -> (f) =>
     oldPlotMaybe       = @_currentPlotMaybe
-    tempPlotMaybe      = maybe(@_plotMap[plotName.toUpperCase()])
+    tempPlotMaybe      = maybe(@_lookupPlot(plotName))
     @_currentPlotMaybe = tempPlotMaybe
     result =
       if penName?
@@ -195,6 +212,18 @@ module.exports = class PlotManager
   _forAllPlots: (f) ->
     pipeline(values, forEach(f))(@_plotMap)
     return
+
+  # (String) => Plot
+  _lookupPlot: (name) ->
+
+    upperName = name.toUpperCase()
+    plot      = @_plotMap[upperName]
+
+    if plot?
+      plot
+    else
+      f = ([k, v]) -> k.match("__HNW_ROLE_[^_]+_#{upperName}")?
+      Object.entries(@_plotMap).find(f)?[1]
 
   # [T] @ ((Plot) => T) => T
   _withPlot: (f) ->

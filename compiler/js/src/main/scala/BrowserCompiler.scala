@@ -16,7 +16,7 @@ import json.WidgetToJson
 
 import org.nlogo.tortoise.macros.json.Jsonify
 
-import org.nlogo.core.CompilerException
+import org.nlogo.core.{ CompilerException, Plot }
 import org.nlogo.core.model.ModelReader
 
 import org.nlogo.parse.CompilerUtilities
@@ -43,6 +43,11 @@ class BrowserCompiler {
 
   private val compiler = new Compiler()
 
+  private val DefaultCRJS = {
+    val tjs = JsObject(fields("code" -> JsString(""), "widgets" -> JsArray(Seq())))
+    JsonLibrary.toNative(tjs)
+  }
+
   @JSExport
   def fromModel(compilationRequest: NativeJson): NativeJson = {
 
@@ -64,16 +69,19 @@ class BrowserCompiler {
   }
 
   @JSExport
-  def fromNlogo(contents: String, commandJson: NativeJson): NativeJson = {
+  def fromNlogo(contents: String, commandJson: NativeJson
+               , compilationRequest: NativeJson = DefaultCRJS): NativeJson = {
 
     val compilationResult =
       for {
         commands      <- readArray[String](commandJson, "commands")
-        compiledModel =  CompiledModel.fromNlogoContents(contents, compiler)
+        tortoiseReq   <- readNative[JsObject](compilationRequest)
+        parsedRequest <- CompilationRequest.read(tortoiseReq).leftMap(_.map(FailureString))
+        compiledModel =  CompiledModel.fromNlogoContents(contents, compiler, parsedRequest.widgets)
         compilation   <- transformErrorsAndUpdateModel(compiledModel, compileExtras(commands, Seq()))
       } yield compilation
 
-    JsonLibrary.toNative(compilationResult.toJsonObj)
+    JsonLibrary.toNative(compilationResult.leftMap(_.map(fail => fail: TortoiseFailure)).toJsonObj)
 
   }
 
@@ -110,6 +118,41 @@ class BrowserCompiler {
     val compiled      = lastCompiledModel.compileWidget(parsedWidget)
 
     JsonLibrary.toNative(compiledWidget2JsonString.apply(compiled))
+  }
+
+  @JSExport
+  def compilePlots(plotJSON: NativeJson): NativeJson = {
+
+    def conv[E, T](t: ValidationNel[E, T])
+                  (f: (E) => TortoiseFailure): ValidationNel[TortoiseFailure, T] =
+      t.leftMap(_.map(f))
+
+    def convStr[T](t: ValidationNel[String, T]) =
+      conv(t)(x => FailureException(new Exception(x)))
+
+    def convComp[T](t: ValidationNel[CompilerException, T]) =
+      conv(t)(x => FailureCompilerException(x))
+
+    val results: ValidationNel[TortoiseFailure, String] =
+      for {
+        tortoiseJSON <- readNative[JsArray](plotJSON)
+        widgets      <- convStr(WidgetToJson.readWidgetsJson(tortoiseJSON))
+        plots         = widgets.collect { case p: Plot => p }
+        plotJS       <- convComp(CompiledModel.plotsToJS(plots, lastCompiledModel))
+      } yield plotJS
+
+    val json =
+      results.fold(
+        es => JsObject(fields(
+          "success" -> JsBool(false),
+          "result"  -> JsArray(es.list.toList.map((f: TortoiseFailure) => f.toJsonObj)))),
+        success => JsObject(fields(
+          "success" -> JsBool(true),
+          "result"  -> JsString(success)))
+      )
+
+    JsonLibrary.toNative(json)
+
   }
 
   @JSExport

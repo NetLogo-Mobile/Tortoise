@@ -91,6 +91,15 @@ class Compiler {
 
   }
 
+  def plotsToJS(widgets: Seq[CompiledWidget]): String = {
+    val globalModelConfig = JsStatement("global.modelConfig", Polyfills.content)
+    TortoiseLoader.integrateSymbols(
+         PlotCompiler.formatPlots(widgets)
+      :+ globalModelConfig
+      :+ resolveModelConfig
+    )
+  }
+
   def compileReporter(
     logo:          String,
     oldProcedures: ProceduresMap = NoProcedures,
@@ -216,11 +225,12 @@ class Compiler {
         , extensionManager = extensionManager
       )
 
-    val pd =
+    val pd = MultiAssignTransformer(
       if (compilerFlags.optimizationsEnabled)
         Optimizer(defs.head)
       else
         defs.head
+    )
 
     implicit val context     = new CompilerContext(code)
     implicit val procContext = ProcedureContext(false, Seq())
@@ -263,11 +273,12 @@ class Compiler {
         , extensionManager = extensionManager
       )
 
-    val pd =
+    val pd = MultiAssignTransformer(
       if (compilerFlags.optimizationsEnabled)
         Optimizer(defs.head)
       else
         defs.head
+    )
 
     if (commands)
       handlers.commands(pd.statements)

@@ -253,11 +253,15 @@ trait ReporterPrims extends PrimUtils {
       case ra: prim.etc._range =>
         generateRange(sourceInfo.start, sourceInfo.end, useCompileArgs, args.checked, ra.syntax)
 
+      // This is very unfortunately named, since in this case it's used for `set`, not `let`.   Ugh.  -Jeremy B December 2023
+      case mli: prim._multiletitem =>
+        s"__MULTI_SET_ARRAY.shift()"
+
       case _ if compilerFlags.generateUnimplemented =>
         generateNotImplementedStub(r.reporter.getClass.getName.drop(1))
 
       case _                                        =>
-        failCompilation(s"unimplemented primitive: ${r.instruction.token.text}", r.instruction.token)
+        failCompilation(s"unimplemented primitive: ${r.instruction}", r.instruction.token)
 
     }
   }
@@ -369,6 +373,12 @@ trait CommandPrims extends PrimUtils {
           failCompilation("This isn't something you can use \"set\" on.", s.instruction.token)
 
       }
+    }
+
+    def generateMultiSet(setCount: Int): String = {
+      val arrayString = s"[__MULTI_SET_ARRAY] = [${args.get(0)}];"
+      val checkString = s"PrimChecks.control.multiLetHasEnoughArgs('SET', ${sourceInfo.start}, ${sourceInfo.end}, ${setCount}, __MULTI_SET_ARRAY);"
+      s"$arrayString\n$checkString"
     }
 
     def generateLoop: String = {
@@ -527,6 +537,7 @@ trait CommandPrims extends PrimUtils {
       case SimplePrims.CheckedPassThroughCommand(op) => s"$op(${args.commasChecked});"
 
       case _: prim._set                  => generateSet
+      case m: prim._multiset             => generateMultiSet(m.sets.length)
       case _: prim.etc._loop             => generateLoop
       case _: prim._repeat               => generateRepeat
       case _: prim.etc._while            => generateWhile
@@ -564,11 +575,19 @@ trait CommandPrims extends PrimUtils {
       case _: prim._report               => s"return PrimChecks.procedure.report(${sourceInfo.start}, ${sourceInfo.end}, ${args.get(0)});"
       case _: prim.etc._ignore           => s"${args.get(0)};"
 
-      case l: prim._let                  =>
+      case l: prim._let =>
         l.let.map(inner => {
           val name = JSIdentProvider(inner.name)
           s"""let $name = ${args.get(0)}; ProcedurePrims.stack().currentContext().registerStringRunVar("${inner.name}", $name);"""
         }).getOrElse("")
+
+      case m: prim._multilet =>
+        val namesString = m.lets.map( (l) => JSIdentProvider(l._2.name) ).mkString(", ")
+        val regsString  = m.lets.map( (l) =>
+          s"""ProcedurePrims.stack().currentContext().registerStringRunVar("${l._2.name}", ${JSIdentProvider(l._2.name)});"""
+        ).mkString(" ")
+        val argsString = s"PrimChecks.control.multiLetHasEnoughArgs('LET', ${sourceInfo.start}, ${sourceInfo.end}, ${m.lets.length}, ${args.get(0)})"
+        s"let [$namesString] = $argsString; $regsString"
 
       case _: prim.etc._withlocalrandomness =>
         s"workspace.rng.withClone(function() { ${handlers.commands(s.args(0))} })"
@@ -592,7 +611,7 @@ trait CommandPrims extends PrimUtils {
         s"${generateNotImplementedStub(s.command.getClass.getName.drop(1))};"
 
       case _                                        =>
-        failCompilation(s"unimplemented primitive: ${s.instruction.token.text}", s.instruction.token)
+        failCompilation(s"unimplemented primitive: ${s.instruction}", s.instruction.token)
 
     }
 
