@@ -188,7 +188,7 @@ getPixel = (data, width, x, y) ->
 # (Array[Int], Int, Int) => Array[RGBA]
 getPixelAPI = (image, x, y) ->
   checkIsImage(image)
-  getPixel(image, image.width, x, y)
+  getPixel(image.data, image.width, x, y)
 
 # (Array[Int], Int, Int, Int, Array[RGBA]) => Unit
 setPixel = (data, width, x, y, rgba) ->
@@ -199,13 +199,13 @@ setPixel = (data, width, x, y, rgba) ->
   return
   
 # (Array[Int], Int, Int, Int, Array[RGBA]) => Unit
-setPixelAPI = (data, x, y, rgba) ->
+setPixelAPI = (image, x, y, rgba) ->
   checkIsImage(image)
   if !Array.isArray(rgba) or rgba.length < 3 or rgba.length > 4
     throw exceptions.extension("The input color must be an array of length 3.")
   if rgba.length == 3
     rgba.push(255)
-  setPixel(image, image.width, x, y, rgba)
+  setPixel(image.data, image.width, x, y, rgba)
   return
 
 arrMult = (arr, scalar) ->
