@@ -77,6 +77,46 @@ copyToPColors = (world) -> (image, useNetLogoColors) ->
   importPColorsImage(getTopology, getPatchSize, getPatchAt, useNetLogoColors, image)
   return
 
+# (Int, Int) => ImageData
+create = (width, height) ->
+  # Create a new ImageData with the specified size
+  newData = new Uint8ClampedArray(width * height * 4)
+  new ImageData(newData, width, height)
+  
+# (ImageData, ImageData, Int, Int) => Unit
+copyTo = (source, target, offsetX, offsetY) ->
+  checkIsImage(source)
+  checkIsImage(target)
+
+  # Get the original dimensions
+  oldWidth = source.width
+  oldHeight = source.height
+  newWidth = target.width
+  newHeight = target.height
+  data = source.data
+  newData = target.data
+
+  # Calculate the offset to place the original image at the center
+  if typeof offsetX is 'undefined'
+    offsetX = Math.floor((newWidth - oldWidth) / 2)
+  if typeof offsetY is 'undefined'
+    offsetY = Math.floor((newHeight - oldHeight) / 2)
+
+  # Copy pixels from the original image to the new image
+  for y in [0...oldHeight]
+    for x in [0...oldWidth]
+      # Calculate the coordinates in the new image
+      newX = x + offsetX
+      newY = y + offsetY
+
+      # Check if the new coordinates are within the boundaries
+      if newX >= 0 and newX < newWidth and newY >= 0 and newY < newHeight
+        # Get the pixel values from the original image
+        pixelData = getPixel(data, oldWidth, x, y)
+
+        # Set the pixel values in the new image
+        setPixel(newData, newWidth, newX, newY, pixelData)
+
 # (ImageData, ImageData) => ImageData
 differenceRgb = (image1, image2) ->
   checkIsImage(image1)
@@ -259,7 +299,7 @@ bilinearScale = (image, width, height) ->
 # (ImageData, Int, Int) => ImageData
 scaled = (image, width, height) ->
   checkIsImage(image)
-  if image.width = width and image.height = image.height
+  if image.width is width and image.height is height
     image
   else if image.width > width and image.height > height
     boxScale(image, width, height)
@@ -293,9 +333,11 @@ bitmapExtension = {
     , prims: {
         "AVERAGE-COLOR": averageColor
       , "CHANNEL": channel
+      , "COPY-TO": copyTo
       , "COPY-TO-DRAWING": copyToDrawing
       , "COPY-TO-SHAPE": copyToShape
       , "COPY-TO-PCOLORS": copyToPColors(workspace.world)
+      , "CREATE": create
       , "DIFFERENCE-RGB": differenceRgb
       , "EXPORT": exportError
       , "FROM-BASE64": fromBase64
