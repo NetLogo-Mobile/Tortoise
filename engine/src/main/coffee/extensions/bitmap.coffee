@@ -60,11 +60,7 @@ copyToDrawing = (image, x, y) ->
 # (World) => (ImageData, String) => Unit
 copyToShape = (image, name, rotatable = false) ->
   checkIsImage(image)
-  if (image.width >= 512 and image.height >= 512)
-    image = scaled(image, 512, 512)
-  else if (image.width >= 256 and image.height >= 256)
-    image = scaled(image, 256, 256)
-  else image = scaled(image, 128, 128)
+  image = scaled(image, 512, 512)
   workspace.updater.importImage(image, 0, 0, name, rotatable)
   return
 
@@ -255,8 +251,8 @@ arrAdd = (arr1, arr2) ->
 
 # (ImageData, Int, Int) => ImageData
 bilinearScale = (image, width, height) ->
-  xScale = width  / image.width
-  yScale = height / image.height
+  xScale = (width - 1) / (image.width - 1)
+  yScale = (height - 1) / (image.height - 1)
   newData = new Uint8ClampedArray(width * height * 4)
 
   for y in [0...height]
@@ -283,8 +279,9 @@ bilinearScale = (image, width, height) ->
         p2 = arrAdd(arrMult(q12, x1Mod), arrMult(q22, x2Mod))
         [p1, p2]
 
+      # Fixed an issue where if y1 = y2, only q11 is used. --John Chen Mar 2024
       p = if y1 is y2
-        q11
+        p1
       else
         arrAdd(arrMult(p1, y2 - oldYRaw), arrMult(p2, oldYRaw - y1))
 

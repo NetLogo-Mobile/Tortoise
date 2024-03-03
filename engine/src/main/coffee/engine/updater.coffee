@@ -49,7 +49,7 @@ module.exports =
       @_reportDrawingEvent({ type: "import-drawing", imageBase64 })
       return
 
-    # (Array[Byte], Int, Int, Int, Int, String?) => Unit
+    # (Array[Byte], Int, Int, String?, Bool?) => Unit
     importImage: (imageData, x, y, shape, rotatable) ->
       @_reportDrawingEvent({ type: "import-image", imageData, x, y, shape, rotatable })
       return
