@@ -207,7 +207,8 @@ trait ReporterPrims extends PrimUtils {
       case p: prim.etc._linkbreedsingular => s"world.linkManager.getLink(${args.get(0)}, ${args.get(1)}, ${jsString(p.breedName)})"
       case b: prim.etc._breedat           => s"SelfManager.self().breedAt(${jsString(b.breedName)}, ${args.get(0)}, ${args.get(1)})"
       case b: prim.etc._breedhere         => s"SelfManager.self().breedHere(${jsString(b.breedName)})"
-      case b: prim.etc._breedon           => s"PrimChecks.agentset.breedOn(${jsString(b.breedName)}, ${args.makeCheckedOp(0)})"
+      case b: prim._breedon               => s"PrimChecks.agentset.breedOn(${jsString(b.breedName)}, ${args.makeCheckedOp(0)})"
+      case b: Optimizer._anybreedon       => s"PrimChecks.agentset.anyBreedOn(${jsString(b.breedName)}, ${args.makeCheckedOp(0)})"
       case b: prim.etc._isbreed           => s"NLType.checks.isBreed(${jsString(b.breedName)}, ${args.get(0)})"
 
       // List prims
@@ -253,8 +254,7 @@ trait ReporterPrims extends PrimUtils {
       case ra: prim.etc._range =>
         generateRange(sourceInfo.start, sourceInfo.end, useCompileArgs, args.checked, ra.syntax)
 
-      // This is very unfortunately named, since in this case it's used for `set`, not `let`.   Ugh.  -Jeremy B December 2023
-      case mli: prim._multiletitem =>
+      case mli: prim._multiassignitem =>
         s"__MULTI_SET_ARRAY.shift()"
 
       case _ if compilerFlags.generateUnimplemented =>

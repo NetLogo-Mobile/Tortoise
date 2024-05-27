@@ -83,14 +83,17 @@ class AgentSetChecks
 
   # (String, Patch | Turtle | PatchSet | TurtleSet) => AgentSet
   breedOn: (breedName, target) ->
-    if checks.isPatch(target)
-      @prims.breedOnPatch(breedName, target)
-    else if checks.isTurtle(target)
-      @prims.breedOnTurtle(breedName, target)
-    else if checks.isPatchSet(target)
-      @prims.breedOnPatchSet(breedName, target)
-    else if checks.isTurtleSet(target)
-      @prims.breedOnTurtleSet(breedName, target)
+    if checks.isAgentSet(target)
+      @prims.breedOnAgentSet(breedName, target)
+    else
+      @prims.breedOnAgent(breedName, target)
+
+  # (String, Patch | Turtle | PatchSet | TurtleSet) => Boolean
+  anyBreedOn: (breedName, target) ->
+    if checks.isAgentSet(target)
+      @prims.anyBreedOnAgentSet(breedName, target)
+    else
+      @prims.anyBreedOnAgent(breedName, target)
 
   # (AgentSet[T]) => Number
   count: (agentset) ->
@@ -198,6 +201,13 @@ class AgentSetChecks
       @prims.turtlesOnAgentSet(agentOrAgentset)
     else
       @prims.turtlesOnAgent(agentOrAgentset)
+
+  # (Agent | AgentSet) => Boolean
+  anyTurtlesOn: (agentOrAgentset) ->
+    if checks.isAgentSet(agentOrAgentset)
+      @prims.anyTurtlesOnAgentSet(agentOrAgentset)
+    else
+      @prims.anyTurtlesOnAgent(agentOrAgentset)
 
   # [T <: (Array[Turtle]|Turtle|AbstractAgentSet[Turtle])] @ (Int, Int, T*) => TurtleSet
   turtleSet: (sourceStart, sourceEnd, values...) ->

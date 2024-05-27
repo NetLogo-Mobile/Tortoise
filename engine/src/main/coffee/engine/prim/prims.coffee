@@ -38,26 +38,37 @@ module.exports =
     boom: ->
       throw exceptions.runtime("boom!", "boom")
 
-    # (String, Array[Patch]) -> TurtleSet
-    breedOn: (breedName, patches) ->
-      turtles = flatMap((p) -> p.breedHereArray(breedName))(patches)
+    # (String, Agent) -> TurtleSet
+    breedOnAgent: (breedName, agent) ->
+      turtles = agent.breedHereArray(breedName)
       new TurtleSet(turtles, @_world)
 
-    # (String, Patch) => TurtleSet
-    breedOnPatch: (breedName, patch) ->
-      @breedOn(breedName, [patch])
+    # (String, Turtle | Patch) -> TurtleSet
+    anyBreedOnAgent: (breedName, agent) ->
+      agent.anyBreedHere(breedName)
 
-    # (String, Turtle) => TurtleSet
-    breedOnTurtle: (breedName, turtle) ->
-      @breedOn(breedName, [turtle.getPatchHere()])
+    # (String, AgentSet) -> TurtleSet
+    breedOnAgentSet: (breedName, agents) ->
+      turtles = flatMap((p) -> p.breedHereArray(breedName))(agents.toArray())
+      new TurtleSet(turtles, @_world)
 
-    # (String, PatchSet) => TurtleSet
-    breedOnPatchSet: (breedName, patchSet) ->
-      @breedOn(breedName, patchSet.toArray())
+    # (String, TurtleSet | PatchSet) -> Boolean
+    anyBreedOnAgentSet: (breedName, agents) ->
+      if checks.isPatchSet(agents)
+        for patch in agents.toArray()
+          if patch.anyBreedHere(breedName)
+            return true
 
-    # (String, TurtleSet) => TurtleSet
-    breedOnTurtleSet: (breedName, turtleSet) ->
-      @breedOn(breedName, map((t) -> t.getPatchHere())(turtleSet.iterator().toArray()))
+      else
+        seenPatches = []
+        for turtle in agents.toArray()
+          patch = turtle.getPatchHere()
+          if not seenPatches.includes(patch)
+            seenPatches.push(patch)
+            if patch.anyBreedHere(breedName)
+              return true
+
+      false
 
     # (Any, String) => Boolean
     booleanCheck: (b, primName) ->
@@ -232,10 +243,27 @@ module.exports =
     turtlesOnAgent: (agent) ->
       agent.turtlesHere()
 
+    # (Patch|Turtle) => Boolean
+    anyTurtlesOnAgent: (agent) ->
+      checks.isTurtle(agent) or not agent.turtlesHere().isEmpty()
+
     # (PatchSet|TurtleSet) => TurtleSet
     turtlesOnAgentSet: (agents) ->
       turtles = flatMap((agent) -> agent.turtlesHere().toArray())(agents.iterator().toArray())
-      new TurtleSet(turtles, @_world)
+      new TurtleSet(Array.from(new Set(turtles)), @_world)
+
+    # (PatchSet|TurtleSet) => Boolean
+    anyTurtlesOnAgentSet: (agents) ->
+      if checks.isTurtleSet(agents)
+        return not agents.isEmpty()
+
+      # This is intentionally written as a loop for the `_anyturtleson` compiler optimization early exit -Jeremy B March
+      # 2024
+      for agent in agents
+        if not agent.turtlesHere().isEmpty()
+          return true
+
+      false
 
     _hasWaited: false
 
